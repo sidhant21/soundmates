@@ -1,0 +1,82 @@
+Build a cross-platform mobile app for Android and iPhone using Flutter.
+
+App concept:
+A social music app where users connect their Spotify account, showcase their music taste, add friends, search users, and see what their friends are currently listening to.
+
+Tech requirements:
+- Flutter frontend
+- Firebase Authentication for app login/signup
+- Cloud Firestore for database
+- Spotify Web API with OAuth 2.0 for Spotify account linking
+
+Main features:
+
+1. Authentication
+- Users can sign up and log in with email/password
+- After login, users can create a username
+- Username must be unique
+
+2. Spotify account linking
+- Allow users to connect their Spotify account
+- Request permissions for:
+  - user-top-read
+  - user-read-recently-played
+  - user-read-currently-playing
+- Store Spotify access token and refresh token securely
+
+3. User profile
+Show:
+- username
+- profile picture (optional)
+- top 5 artists
+- top 5 tracks
+- recently played tracks
+- currently playing song (if any)
+
+4. Search users
+- Search users by username
+- Show matching users in a list
+
+5. Friends system
+- Send friend requests
+- Accept friend requests
+- Show friend list
+
+6. Friend profiles
+- Users can open a friend’s profile
+- View their top artists, top tracks, and currently playing song
+
+Database structure:
+Create Firestore collections for:
+- users
+- friend_requests
+- friendships
+
+UI screens:
+Create these screens:
+- Login / Signup
+- Create Username
+- Connect Spotify
+- Home
+- My Profile
+- Search Users
+- Friend Requests
+- Friends List
+- Friend Profile
+
+Development instructions:
+- Keep the UI simple and clean
+- Use clear folder structure
+- Add comments explaining the code
+- Make the project beginner-friendly and easy to understand
+- If something is large, build it step-by-step starting with authentication first
+
+Important:
+Start by building only Phase 1 first:
+- authentication
+- create username
+- connect Spotify
+- show my own Spotify profile
+
+Do not try to finish every feature immediately.
+After Phase 1 works, then continue to Phase 2 with search and friends.
