@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  Platform,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import * as WebBrowser from "expo-web-browser";
@@ -24,6 +25,17 @@ const SCOPES = [
   "user-read-currently-playing",
 ].join(" ");
 
+// Build a stable redirect URI. On web we use the Replit dev domain (set via EXPO_PUBLIC_DOMAIN).
+// On native (Expo Go / standalone) we use the custom scheme.
+function buildRedirectUri(): string {
+  if (Platform.OS === "web") {
+    const domain = process.env.EXPO_PUBLIC_DOMAIN;
+    if (domain) return `https://${domain}/`;
+    return window.location.origin + "/";
+  }
+  return AuthSession.makeRedirectUri({ scheme: "soundmates" });
+}
+
 export default function ConnectSpotifyScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -31,7 +43,7 @@ export default function ConnectSpotifyScreen() {
   const { fetchAllSpotifyData } = useSpotify();
   const [loading, setLoading] = useState(false);
 
-  const redirectUri = AuthSession.makeRedirectUri({ scheme: "soundmates" });
+  const redirectUri = buildRedirectUri();
 
   const handleConnect = async () => {
     setLoading(true);
@@ -90,6 +102,15 @@ export default function ConnectSpotifyScreen() {
         <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
           Link your Spotify account to showcase your music taste and see what your friends are listening to.
         </Text>
+
+        <View style={[styles.redirectBox, { backgroundColor: colors.secondary, borderColor: colors.border }]}>
+          <Text style={[styles.redirectLabel, { color: colors.mutedForeground }]}>
+            Add this Redirect URI in your Spotify Dashboard:
+          </Text>
+          <Text selectable style={[styles.redirectUri, { color: colors.primary }]}>
+            {redirectUri}
+          </Text>
+        </View>
 
         <View style={styles.permissions}>
           {[
@@ -159,4 +180,13 @@ const styles = StyleSheet.create({
   btnText: { fontSize: 16, fontFamily: "Inter_700Bold", color: "#000" },
   skipBtn: { paddingVertical: 12, alignItems: "center" },
   skipText: { fontSize: 14, fontFamily: "Inter_400Regular" },
+  redirectBox: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 12,
+    gap: 6,
+    alignSelf: "stretch",
+  },
+  redirectLabel: { fontSize: 11, fontFamily: "Inter_500Medium" },
+  redirectUri: { fontSize: 12, fontFamily: "Inter_600SemiBold", lineHeight: 18 },
 });
