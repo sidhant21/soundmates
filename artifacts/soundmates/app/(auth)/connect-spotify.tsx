@@ -33,7 +33,7 @@ function buildRedirectUri(): string {
     if (domain) return `https://${domain}/`;
     return window.location.origin + "/";
   }
-  return AuthSession.makeRedirectUri({ scheme: "soundmates" });
+  return AuthSession.makeRedirectUri({ scheme: "soundmates", path: "callback" });
 }
 
 export default function ConnectSpotifyScreen() {
