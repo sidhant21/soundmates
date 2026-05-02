@@ -11,8 +11,8 @@ interface Props {
 
 export function ArtistRow({ artist, index, showIndex }: Props) {
   const colors = useColors();
-  const imageUrl = artist.images[0]?.url;
-  const genre = artist.genres[0] ?? "";
+  const imageUrl = artist.images?.[0]?.url;
+  const genre = artist.genres?.[0] ?? "";
 
   return (
     <View style={[styles.row, { borderBottomColor: colors.border }]}>

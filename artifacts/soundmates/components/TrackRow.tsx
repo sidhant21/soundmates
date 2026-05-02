@@ -11,8 +11,8 @@ interface Props {
 
 export function TrackRow({ track, index, showIndex }: Props) {
   const colors = useColors();
-  const imageUrl = track.album.images[0]?.url;
-  const artistNames = track.artists.map((a) => a.name).join(", ");
+  const imageUrl = track.album?.images?.[0]?.url;
+  const artistNames = track.artists?.map((a) => a.name).join(", ") ?? "";
 
   return (
     <View style={[styles.row, { borderBottomColor: colors.border }]}>

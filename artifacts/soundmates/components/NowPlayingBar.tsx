@@ -26,8 +26,8 @@ export function NowPlayingBar({ currentlyPlaying }: Props) {
 
   if (!currentlyPlaying.item) return null;
   const { item, is_playing } = currentlyPlaying;
-  const imageUrl = item.album.images[0]?.url;
-  const artistNames = item.artists.map((a) => a.name).join(", ");
+  const imageUrl = item.album?.images?.[0]?.url;
+  const artistNames = item.artists?.map((a) => a.name).join(", ") ?? "";
 
   return (
     <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
