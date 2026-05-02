@@ -103,15 +103,6 @@ export default function ConnectSpotifyScreen() {
           Link your Spotify account to showcase your music taste and see what your friends are listening to.
         </Text>
 
-        <View style={[styles.redirectBox, { backgroundColor: colors.secondary, borderColor: colors.border }]}>
-          <Text style={[styles.redirectLabel, { color: colors.mutedForeground }]}>
-            Add this Redirect URI in your Spotify Dashboard:
-          </Text>
-          <Text selectable style={[styles.redirectUri, { color: colors.primary }]}>
-            {redirectUri}
-          </Text>
-        </View>
-
         <View style={styles.permissions}>
           {[
             { icon: "trending-up", label: "Your top tracks and artists" },
