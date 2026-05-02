@@ -95,7 +95,7 @@ export default function SignupScreen() {
           </View>
 
           <TouchableOpacity
-            style={[styles.btn, { backgroundColor: colors.primary }, loading && styles.btnDisabled]}
+            style={[styles.btn, { backgroundColor: "#9e8bff" }, loading && styles.btnDisabled]}
             onPress={handleSignup}
             disabled={loading}
             activeOpacity={0.8}
