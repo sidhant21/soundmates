@@ -93,7 +93,7 @@ export default function LoginScreen() {
         <TouchableOpacity onPress={() => router.push("/(auth)/signup")} activeOpacity={0.7}>
           <Text style={[styles.switchText, { color: colors.mutedForeground }]}>
             No account?{" "}
-            <Text style={{ color: colors.primary, fontFamily: "Inter_600SemiBold" }}>Sign up</Text>
+            <Text style={{ color: "#9e8bff", fontFamily: "Inter_600SemiBold" }}>Sign up</Text>
           </Text>
         </TouchableOpacity>
       </View>
