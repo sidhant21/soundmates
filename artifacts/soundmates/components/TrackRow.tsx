@@ -7,9 +7,10 @@ interface Props {
   track: SpotifyTrack;
   index?: number;
   showIndex?: boolean;
+  countLabel?: string;
 }
 
-export function TrackRow({ track, index, showIndex }: Props) {
+export function TrackRow({ track, index, showIndex, countLabel }: Props) {
   const colors = useColors();
   const imageUrl = track.album?.images?.[0]?.url;
   const artistNames = track.artists?.map((a) => a.name).join(", ") ?? "";
@@ -27,9 +28,14 @@ export function TrackRow({ track, index, showIndex }: Props) {
         <View style={[styles.imagePlaceholder, { backgroundColor: colors.muted }]} />
       )}
       <View style={styles.info}>
-        <Text style={[styles.name, { color: colors.foreground }]} numberOfLines={1}>
-          {track.name}
-        </Text>
+        <View style={styles.nameRow}>
+          <Text style={[styles.name, { color: colors.foreground }]} numberOfLines={1}>
+            {track.name}
+          </Text>
+          {countLabel && (
+            <Text style={[styles.count, { color: colors.primary }]}>{countLabel}</Text>
+          )}
+        </View>
         <Text style={[styles.artists, { color: colors.mutedForeground }]} numberOfLines={1}>
           {artistNames}
         </Text>
@@ -66,9 +72,20 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
   name: {
     fontSize: 14,
     fontFamily: "Inter_600SemiBold",
+    flexShrink: 1,
+  },
+  count: {
+    fontSize: 11,
+    fontFamily: "Inter_500Medium",
+    flexShrink: 0,
   },
   artists: {
     fontSize: 12,
