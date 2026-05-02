@@ -45,7 +45,7 @@ export default function LoginScreen() {
     >
       <View style={[styles.inner, { paddingTop: insets.top + 60, paddingBottom: insets.bottom + 24 }]}>
         <View style={styles.header}>
-          <Text style={[styles.logo, { color: colors.primary }]}>SoundMates</Text>
+          <Text style={[styles.logo, { color: "#9e8bff" }]}>SoundMates</Text>
           <Text style={[styles.tagline, { color: colors.mutedForeground }]}>
             See what your friends are listening to
           </Text>
