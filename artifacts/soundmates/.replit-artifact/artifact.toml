@@ -1,0 +1,27 @@
+kind = "mobile"
+previewPath = "/"
+title = "SoundMates"
+version = "1.0.0"
+id = "artifacts/soundmates"
+router = "expo-domain"
+
+[[integratedSkills]]
+name = "expo"
+version = "1.0.0"
+
+[[services]]
+ensurePreviewReachable = "/status"
+name = "expo"
+paths = [ "/" ]
+localPort = 19216
+
+[services.development]
+run = "pnpm --filter @workspace/soundmates run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/soundmates", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/soundmates", "run", "serve" ]
+
+[services.env]
+PORT = "19216"
+BASE_PATH = "/"
