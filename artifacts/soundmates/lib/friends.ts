@@ -34,10 +34,7 @@ export interface UserProfile {
   uid: string;
   email: string;
   username: string;
-  spotifyConnected: boolean;
-  spotifyAccessToken?: string;
-  spotifyRefreshToken?: string;
-  spotifyTokenExpiry?: number;
+  lastfmUsername?: string;
   createdAt: number;
 }
 

@@ -113,8 +113,8 @@ export default function FriendsScreen() {
       </View>
       <View style={styles.info}>
         <Text style={[styles.username, { color: colors.foreground }]}>@{item.username}</Text>
-        {item.spotifyConnected && (
-          <Text style={[styles.sub, { color: colors.mutedForeground }]}>Spotify connected</Text>
+        {item.lastfmUsername && (
+          <Text style={[styles.sub, { color: colors.mutedForeground }]}>Last.fm connected</Text>
         )}
       </View>
       <TouchableOpacity onPress={() => handleRemove(item)} hitSlop={8}>

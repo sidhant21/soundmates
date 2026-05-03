@@ -29,15 +29,20 @@ import { NowPlayingBar } from "@/components/NowPlayingBar";
 import { TrackRow } from "@/components/TrackRow";
 import { ArtistRow } from "@/components/ArtistRow";
 import { SectionHeader } from "@/components/SectionHeader";
-import type { SpotifyTrack, SpotifyArtist, CurrentlyPlaying, RecentlyPlayed } from "@/context/SpotifyContext";
+import type { LastfmTrack, LastfmArtist, CurrentlyPlaying, RecentlyPlayed } from "@/context/LastfmContext";
+import { fetchLastfmAPI } from "@/lib/lastfm";
 
-async function fetchSpotifyData(token: string, endpoint: string) {
-  const res = await fetch(`https://api.spotify.com/v1${endpoint}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (res.status === 204) return null;
-  if (!res.ok) return null;
-  return res.json();
+function mapTrack(t: any): LastfmTrack {
+  return {
+    id: t.mbid || t.url,
+    name: t.name,
+    artists: [{ name: t.artist?.name || t.artist?.["#text"] || "Unknown Artist" }],
+    album: {
+      name: t.album?.["#text"] || "",
+      images: t.image?.map((img: any) => ({ url: img["#text"], width: 300, height: 300 })) || [],
+    },
+    duration_ms: 0,
+  };
 }
 
 export default function FriendProfileScreen() {
@@ -50,8 +55,8 @@ export default function FriendProfileScreen() {
   const [friendProfile, setFriendProfile] = useState<UserProfile | null>(null);
   const [relation, setRelation] = useState<"none" | "friends" | "sent" | "received">("none");
   const [pendingReq, setPendingReq] = useState<FriendRequest | null>(null);
-  const [topTracks, setTopTracks] = useState<SpotifyTrack[]>([]);
-  const [topArtists, setTopArtists] = useState<SpotifyArtist[]>([]);
+  const [topTracks, setTopTracks] = useState<LastfmTrack[]>([]);
+  const [topArtists, setTopArtists] = useState<LastfmArtist[]>([]);
   const [currentlyPlaying, setCurrentlyPlaying] = useState<CurrentlyPlaying | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [loadingMusic, setLoadingMusic] = useState(false);
@@ -73,25 +78,42 @@ export default function FriendProfileScreen() {
       else if (pending?.toUid === user.uid) setRelation("received");
       else setRelation("none");
 
-      if (fp?.spotifyConnected && fp.spotifyAccessToken) {
-        loadSpotifyData(fp.spotifyAccessToken);
+      if (fp?.lastfmUsername) {
+        loadLastfmData(fp.lastfmUsername);
       }
     } finally {
       setLoadingProfile(false);
     }
   }, [uid, user]);
 
-  const loadSpotifyData = async (token: string) => {
+  const loadLastfmData = async (username: string) => {
     setLoadingMusic(true);
     try {
-      const [tracks, artists, current] = await Promise.all([
-        fetchSpotifyData(token, "/me/top/tracks?limit=5&time_range=short_term"),
-        fetchSpotifyData(token, "/me/top/artists?limit=5&time_range=short_term"),
-        fetchSpotifyData(token, "/me/player/currently-playing"),
+      const [tracksRes, artistsRes, recentRes] = await Promise.all([
+        fetchLastfmAPI("user.getTopTracks", { user: username, limit: "5", period: "1month" }),
+        fetchLastfmAPI("user.getTopArtists", { user: username, limit: "5", period: "1month" }),
+        fetchLastfmAPI("user.getRecentTracks", { user: username, limit: "5" }),
       ]);
-      setTopTracks(tracks?.items ?? []);
-      setTopArtists(artists?.items ?? []);
+      
+      const tracks = tracksRes.toptracks?.track?.map(mapTrack) || [];
+      const artists = artistsRes.topartists?.artist?.map((a: any) => ({
+        id: a.mbid || a.url,
+        name: a.name,
+        images: a.image?.map((img: any) => ({ url: img["#text"], width: 300, height: 300 })) || [],
+        playcount: parseInt(a.playcount, 10),
+      })) || [];
+      
+      const recentTracks = recentRes.recenttracks?.track || [];
+      let current: CurrentlyPlaying | null = null;
+      if (recentTracks.length > 0 && recentTracks[0]["@attr"]?.nowplaying === "true") {
+        current = { is_playing: true, item: mapTrack(recentTracks[0]) };
+      }
+
+      setTopTracks(tracks);
+      setTopArtists(artists);
       setCurrentlyPlaying(current);
+    } catch {
+      // ignore
     } finally {
       setLoadingMusic(false);
     }
@@ -185,10 +207,10 @@ export default function FriendProfileScreen() {
         </View>
         <Text style={[styles.username, { color: colors.foreground }]}>@{friendProfile.username}</Text>
 
-        {friendProfile.spotifyConnected && (
-          <View style={[styles.spotifyBadge, { backgroundColor: "#1DB95420", borderColor: "#1DB954" }]}>
-            <Feather name="music" size={12} color="#1DB954" />
-            <Text style={styles.spotifyBadgeText}>Spotify Connected</Text>
+        {friendProfile.lastfmUsername && (
+          <View style={[styles.spotifyBadge, { backgroundColor: "#D5100720", borderColor: "#D51007" }]}>
+            <Feather name="music" size={12} color="#D51007" />
+            <Text style={[styles.spotifyBadgeText, { color: "#D51007" }]}>Last.fm: {friendProfile.lastfmUsername}</Text>
           </View>
         )}
 

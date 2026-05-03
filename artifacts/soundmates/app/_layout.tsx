@@ -16,7 +16,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
-import { SpotifyProvider } from "@/context/SpotifyContext";
+import { LastfmProvider } from "@/context/LastfmContext";
 import { LoadingScreen } from "@/components/LoadingScreen";
 
 SplashScreen.preventAutoHideAsync();
@@ -37,8 +37,8 @@ function AuthGate() {
       if (!inAuth) router.replace("/(auth)/login");
     } else if (!profile?.username) {
       router.replace("/(auth)/create-username");
-    } else if (!profile?.spotifyConnected) {
-      router.replace("/(auth)/connect-spotify");
+    } else if (!profile?.lastfmUsername) {
+      router.replace("/(auth)/connect-lastfm");
     } else {
       if (inAuth) router.replace("/(tabs)");
     }
@@ -73,9 +73,9 @@ export default function RootLayout() {
           <GestureHandlerRootView style={{ flex: 1 }}>
             <KeyboardProvider>
               <AuthProvider>
-                <SpotifyProvider>
+                <LastfmProvider>
                   <AuthGate />
-                </SpotifyProvider>
+                </LastfmProvider>
               </AuthProvider>
             </KeyboardProvider>
           </GestureHandlerRootView>

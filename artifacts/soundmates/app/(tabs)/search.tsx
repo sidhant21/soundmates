@@ -95,9 +95,9 @@ export default function SearchScreen() {
         </View>
         <View style={styles.info}>
           <Text style={[styles.username, { color: colors.foreground }]}>@{item.user.username}</Text>
-          {item.user.spotifyConnected && (
+          {item.user.lastfmUsername && (
             <Text style={[styles.spotifyTag, { color: colors.mutedForeground }]}>
-              Spotify connected
+              Last.fm connected
             </Text>
           )}
         </View>

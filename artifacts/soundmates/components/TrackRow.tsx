@@ -1,10 +1,10 @@
 import React from "react";
 import { View, Text, Image, StyleSheet } from "react-native";
 import { useColors } from "@/hooks/useColors";
-import type { SpotifyTrack } from "@/context/SpotifyContext";
+import type { LastfmTrack } from "@/context/LastfmContext";
 
 interface Props {
-  track: SpotifyTrack;
+  track: LastfmTrack;
   index?: number;
   showIndex?: boolean;
   countLabel?: string;
@@ -12,7 +12,8 @@ interface Props {
 
 export function TrackRow({ track, index, showIndex, countLabel }: Props) {
   const colors = useColors();
-  const imageUrl = track.album?.images?.[0]?.url;
+  const images = track.album?.images || [];
+  const imageUrl = images.length > 0 ? images[images.length - 1].url : null;
   const artistNames = track.artists?.map((a) => a.name).join(", ") ?? "";
 
   return (

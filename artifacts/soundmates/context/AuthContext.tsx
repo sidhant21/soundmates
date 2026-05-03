@@ -22,10 +22,7 @@ interface UserProfile {
   email: string;
   username: string;
   photoURL?: string;
-  spotifyConnected: boolean;
-  spotifyAccessToken?: string;
-  spotifyRefreshToken?: string;
-  spotifyTokenExpiry?: number;
+  lastfmUsername?: string;
   createdAt: number;
 }
 
@@ -37,8 +34,8 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   logOut: () => Promise<void>;
   createUsername: (username: string) => Promise<void>;
-  updateSpotifyTokens: (accessToken: string, refreshToken: string, expiresIn: number) => Promise<void>;
-  disconnectSpotify: () => Promise<void>;
+  updateLastfmUsername: (username: string) => Promise<void>;
+  disconnectLastfm: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
 
@@ -98,7 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       uid: user.uid,
       email: user.email!,
       username: trimmed,
-      spotifyConnected: false,
+
       createdAt: Date.now(),
     };
 
@@ -106,31 +103,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfile(userProfile);
   };
 
-  const updateSpotifyTokens = async (
-    accessToken: string,
-    refreshToken: string,
-    expiresIn: number
-  ) => {
+  const updateLastfmUsername = async (lastfmUsername: string) => {
     if (!user) throw new Error("Not authenticated");
-    const expiry = Date.now() + expiresIn * 1000;
-    const updates = {
-      spotifyConnected: true,
-      spotifyAccessToken: accessToken,
-      spotifyRefreshToken: refreshToken,
-      spotifyTokenExpiry: expiry,
-    };
+    const updates = { lastfmUsername };
     await setDoc(doc(db, "users", user.uid), updates, { merge: true });
     setProfile((prev) => (prev ? { ...prev, ...updates } : prev));
   };
 
-  const disconnectSpotify = async () => {
+  const disconnectLastfm = async () => {
     if (!user) throw new Error("Not authenticated");
-    const updates = {
-      spotifyConnected: false,
-      spotifyAccessToken: "",
-      spotifyRefreshToken: "",
-      spotifyTokenExpiry: 0,
-    };
+    const updates = { lastfmUsername: "" };
     await setDoc(doc(db, "users", user.uid), updates, { merge: true });
     setProfile((prev) => (prev ? { ...prev, ...updates } : prev));
   };
@@ -149,8 +131,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signIn,
         logOut,
         createUsername,
-        updateSpotifyTokens,
-        disconnectSpotify,
+        updateLastfmUsername,
+        disconnectLastfm,
         refreshProfile,
       }}
     >

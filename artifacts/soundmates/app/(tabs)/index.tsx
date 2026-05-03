@@ -11,7 +11,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
-import { useSpotify } from "@/context/SpotifyContext";
+import { useLastfm } from "@/context/LastfmContext";
 import { NowPlayingBar } from "@/components/NowPlayingBar";
 import { TrackRow } from "@/components/TrackRow";
 import { ArtistRow } from "@/components/ArtistRow";
@@ -29,20 +29,20 @@ export default function HomeScreen() {
     loadingTracks,
     loadingArtists,
     loadingCurrent,
-    fetchAllSpotifyData,
-  } = useSpotify();
+    fetchAllData,
+  } = useLastfm();
 
   const [refreshing, setRefreshing] = React.useState(false);
 
   useEffect(() => {
-    if (profile?.spotifyConnected) {
-      fetchAllSpotifyData();
+    if (profile?.lastfmUsername) {
+      fetchAllData();
     }
-  }, [profile?.spotifyConnected]);
+  }, [profile?.lastfmUsername]);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchAllSpotifyData();
+    await fetchAllData();
     setRefreshing(false);
   };
 
@@ -53,7 +53,7 @@ export default function HomeScreen() {
         styles.content,
         {
           paddingTop: insets.top + (Platform.OS === "web" ? 67 : 16),
-          paddingBottom: insets.bottom + 100,
+          paddingBottom: insets.bottom + 160,
         },
       ]}
       refreshControl={

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { View, Text, Image, StyleSheet, Animated, Easing } from "react-native";
 import { useColors } from "@/hooks/useColors";
-import type { CurrentlyPlaying } from "@/context/SpotifyContext";
+import type { CurrentlyPlaying } from "@/context/LastfmContext";
 
 interface Props {
   currentlyPlaying: CurrentlyPlaying;
@@ -26,7 +26,8 @@ export function NowPlayingBar({ currentlyPlaying }: Props) {
 
   if (!currentlyPlaying.item) return null;
   const { item, is_playing } = currentlyPlaying;
-  const imageUrl = item.album?.images?.[0]?.url;
+  const images = item.album?.images || [];
+  const imageUrl = images.length > 0 ? images[images.length - 1].url : null;
   const artistNames = item.artists?.map((a) => a.name).join(", ") ?? "";
 
   return (

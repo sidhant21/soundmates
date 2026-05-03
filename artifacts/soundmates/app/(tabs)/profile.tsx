@@ -13,7 +13,7 @@ import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
-import { useSpotify } from "@/context/SpotifyContext";
+import { useLastfm } from "@/context/LastfmContext";
 import { NowPlayingBar } from "@/components/NowPlayingBar";
 import { TrackRow } from "@/components/TrackRow";
 import { ArtistRow } from "@/components/ArtistRow";
@@ -22,7 +22,7 @@ import { SectionHeader } from "@/components/SectionHeader";
 export default function ProfileScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { profile, logOut, disconnectSpotify } = useAuth();
+  const { profile, logOut, disconnectLastfm } = useAuth();
   const {
     topTracks,
     topArtists,
@@ -30,18 +30,18 @@ export default function ProfileScreen() {
     recentlyPlayed,
     loadingTracks,
     loadingArtists,
-    fetchAllSpotifyData,
+    fetchAllData,
     clearData,
-  } = useSpotify();
+  } = useLastfm();
   const [refreshing, setRefreshing] = React.useState(false);
 
   useEffect(() => {
-    if (profile?.spotifyConnected) fetchAllSpotifyData();
-  }, [profile?.spotifyConnected]);
+    if (profile?.lastfmUsername) fetchAllData();
+  }, [profile?.lastfmUsername]);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchAllSpotifyData();
+    await fetchAllData();
     setRefreshing(false);
   };
 
@@ -50,7 +50,7 @@ export default function ProfileScreen() {
       style={[styles.scroll, { backgroundColor: colors.background }]}
       contentContainerStyle={[
         styles.content,
-        { paddingTop: insets.top + (Platform.OS === "web" ? 67 : 16), paddingBottom: insets.bottom + 100 },
+        { paddingTop: insets.top + (Platform.OS === "web" ? 67 : 16), paddingBottom: insets.bottom + 160 },
       ]}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
     >
@@ -69,22 +69,22 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Spotify badge & disconnect */}
-      {profile?.spotifyConnected && (
+      {/* Last.fm badge & disconnect */}
+      {profile?.lastfmUsername && (
         <View style={styles.spotifyContainer}>
-          <View style={[styles.spotifyBadge, { backgroundColor: "#1DB95420", borderColor: "#1DB954" }]}>
-            <Feather name="music" size={14} color="#1DB954" />
-            <Text style={styles.spotifyBadgeText}>Spotify Connected</Text>
+          <View style={[styles.spotifyBadge, { backgroundColor: "#D5100720", borderColor: "#D51007" }]}>
+            <Feather name="music" size={14} color="#D51007" />
+            <Text style={[styles.spotifyBadgeText, { color: "#D51007" }]}>Last.fm: {profile.lastfmUsername}</Text>
           </View>
           <TouchableOpacity 
             style={[styles.disconnectBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
             onPress={async () => {
-              await disconnectSpotify();
-              clearData();
+               await disconnectLastfm();
+               clearData();
             }}
             activeOpacity={0.7}
           >
-            <Text style={[styles.disconnectText, { color: colors.foreground }]}>Disconnect Spotify</Text>
+            <Text style={[styles.disconnectText, { color: colors.foreground }]}>Disconnect Last.fm</Text>
           </TouchableOpacity>
         </View>
       )}
