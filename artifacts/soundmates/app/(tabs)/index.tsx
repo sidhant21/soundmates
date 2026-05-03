@@ -78,34 +78,6 @@ export default function HomeScreen() {
         <ActivityIndicator color={colors.primary} style={styles.loader} />
       )}
 
-      {/* Top Tracks */}
-      <View style={styles.section}>
-        <SectionHeader title="Your Top Tracks" subtitle="Last 4 weeks" />
-        {loadingTracks ? (
-          <ActivityIndicator color={colors.primary} style={styles.loader} />
-        ) : topTracks.length === 0 ? (
-          <Text style={[styles.empty, { color: colors.mutedForeground }]}>No top tracks yet</Text>
-        ) : (
-          topTracks.map((track, i) => (
-            <TrackRow key={track.id} track={track} index={i} showIndex />
-          ))
-        )}
-      </View>
-
-      {/* Top Artists */}
-      <View style={styles.section}>
-        <SectionHeader title="Your Top Artists" subtitle="Last 4 weeks" />
-        {loadingArtists ? (
-          <ActivityIndicator color={colors.primary} style={styles.loader} />
-        ) : topArtists.length === 0 ? (
-          <Text style={[styles.empty, { color: colors.mutedForeground }]}>No top artists yet</Text>
-        ) : (
-          topArtists.map((artist, i) => (
-            <ArtistRow key={artist.id} artist={artist} index={i} showIndex />
-          ))
-        )}
-      </View>
-
       {/* Recently Played */}
       {recentlyPlayed.length > 0 && (
         <View style={styles.section}>
@@ -132,6 +104,35 @@ export default function HomeScreen() {
           })()}
         </View>
       )}
+
+      {/* Top Tracks */}
+      <View style={styles.section}>
+        <SectionHeader title="Top Tracks" subtitle="Last 7 days" />
+        {loadingTracks ? (
+          <ActivityIndicator color={colors.primary} style={styles.loader} />
+        ) : topTracks.length === 0 ? (
+          <Text style={[styles.empty, { color: colors.mutedForeground }]}>No data yet</Text>
+        ) : (
+          topTracks.map((track, i) => (
+            <TrackRow key={track.id} track={track} index={i} showIndex />
+          ))
+        )}
+      </View>
+
+      {/* Top Artists */}
+      <View style={styles.section}>
+        <SectionHeader title="Top Artists" subtitle="Last 7 days" />
+        {loadingArtists ? (
+          <ActivityIndicator color={colors.primary} style={styles.loader} />
+        ) : topArtists.length === 0 ? (
+          <Text style={[styles.empty, { color: colors.mutedForeground }]}>No data yet</Text>
+        ) : (
+          topArtists.map((artist, i) => (
+            <ArtistRow key={artist.id} artist={artist} index={i} showIndex />
+          ))
+        )}
+      </View>
+
     </ScrollView>
   );
 }

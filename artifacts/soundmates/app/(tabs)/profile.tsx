@@ -33,11 +33,15 @@ export default function ProfileScreen() {
     fetchAllData,
     clearData,
   } = useLastfm();
+
+
   const [refreshing, setRefreshing] = React.useState(false);
 
   useEffect(() => {
     if (profile?.lastfmUsername) fetchAllData();
   }, [profile?.lastfmUsername]);
+
+
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -98,7 +102,7 @@ export default function ProfileScreen() {
 
       {/* Top Tracks */}
       <View style={styles.section}>
-        <SectionHeader title="Top Tracks" subtitle="Last 4 weeks" />
+        <SectionHeader title="Top Tracks" subtitle="Last 7 days" />
         {loadingTracks ? (
           <ActivityIndicator color={colors.primary} style={styles.loader} />
         ) : topTracks.length === 0 ? (
@@ -112,7 +116,7 @@ export default function ProfileScreen() {
 
       {/* Top Artists */}
       <View style={styles.section}>
-        <SectionHeader title="Top Artists" subtitle="Last 4 weeks" />
+        <SectionHeader title="Top Artists" subtitle="Last 7 days" />
         {loadingArtists ? (
           <ActivityIndicator color={colors.primary} style={styles.loader} />
         ) : topArtists.length === 0 ? (
@@ -123,6 +127,8 @@ export default function ProfileScreen() {
           ))
         )}
       </View>
+
+
 
       {/* Recently Played */}
       {recentlyPlayed.length > 0 && (

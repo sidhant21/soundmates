@@ -9,6 +9,7 @@ import {
   Platform,
   Alert,
   RefreshControl,
+  Image,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
@@ -30,16 +31,36 @@ import { TrackRow } from "@/components/TrackRow";
 import { ArtistRow } from "@/components/ArtistRow";
 import { SectionHeader } from "@/components/SectionHeader";
 import type { LastfmTrack, LastfmArtist, CurrentlyPlaying, RecentlyPlayed } from "@/context/LastfmContext";
-import { fetchLastfmAPI } from "@/lib/lastfm";
+import { 
+  fetchLastfmAPI, 
+  fetchCoverArtDeezer, 
+  fetchCoverArtiTunes, 
+  fetchArtistImageDeezer, 
+  fetchArtistImageiTunes 
+} from "@/lib/lastfm";
 
 function mapTrack(t: any): LastfmTrack {
+  const rawImages = t.image || [];
+  const placeholderHash = "2a96cbd8b46e442fc41c2b86b821562f";
+  const validImages = rawImages.filter((img: any) => {
+    const url = img["#text"];
+    return url && url.trim() !== "" && !url.includes(placeholderHash);
+  });
+  
+  const bestImage = 
+    validImages.find((i: any) => i.size === "extralarge") ||
+    validImages.find((i: any) => i.size === "large") ||
+    validImages[validImages.length - 1];
+
+  const images = bestImage ? [{ url: bestImage["#text"], width: 300, height: 300 }] : [];
+
   return {
-    id: t.mbid || t.url,
+    id: t.mbid || t.url || `${t.name}-${t.artist?.name || t.artist?.["#text"] || ""}`,
     name: t.name,
     artists: [{ name: t.artist?.name || t.artist?.["#text"] || "Unknown Artist" }],
     album: {
       name: t.album?.["#text"] || "",
-      images: t.image?.map((img: any) => ({ url: img["#text"], width: 300, height: 300 })) || [],
+      images: images,
     },
     duration_ms: 0,
   };
@@ -58,6 +79,8 @@ export default function FriendProfileScreen() {
   const [topTracks, setTopTracks] = useState<LastfmTrack[]>([]);
   const [topArtists, setTopArtists] = useState<LastfmArtist[]>([]);
   const [currentlyPlaying, setCurrentlyPlaying] = useState<CurrentlyPlaying | null>(null);
+
+
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [loadingMusic, setLoadingMusic] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
@@ -81,6 +104,8 @@ export default function FriendProfileScreen() {
       if (fp?.lastfmUsername) {
         loadLastfmData(fp.lastfmUsername);
       }
+
+
     } finally {
       setLoadingProfile(false);
     }
@@ -88,25 +113,68 @@ export default function FriendProfileScreen() {
 
   const loadLastfmData = async (username: string) => {
     setLoadingMusic(true);
+    setTopTracks([]);
+    setTopArtists([]);
     try {
+
       const [tracksRes, artistsRes, recentRes] = await Promise.all([
-        fetchLastfmAPI("user.getTopTracks", { user: username, limit: "5", period: "1month" }),
-        fetchLastfmAPI("user.getTopArtists", { user: username, limit: "5", period: "1month" }),
+        fetchLastfmAPI("user.getTopTracks", { user: username, limit: "5", period: "7day" }),
+        fetchLastfmAPI("user.getTopArtists", { user: username, limit: "5", period: "7day" }),
         fetchLastfmAPI("user.getRecentTracks", { user: username, limit: "5" }),
       ]);
+
       
-      const tracks = tracksRes.toptracks?.track?.map(mapTrack) || [];
-      const artists = artistsRes.topartists?.artist?.map((a: any) => ({
-        id: a.mbid || a.url,
-        name: a.name,
-        images: a.image?.map((img: any) => ({ url: img["#text"], width: 300, height: 300 })) || [],
-        playcount: parseInt(a.playcount, 10),
-      })) || [];
+      const tracks = await Promise.all((tracksRes.toptracks?.track || []).map(async (t: any) => {
+        let mapped = mapTrack(t);
+        const artistName = t.artist?.name || t.artist?.["#text"];
+        if (artistName && t.name) {
+          try {
+            let art = await fetchCoverArtDeezer(artistName, t.name);
+            if (!art) art = await fetchCoverArtiTunes(artistName, t.name);
+            if (art) mapped.album.images = [{ url: art, width: 600, height: 600 }];
+          } catch { /* fallback */ }
+        }
+        return mapped;
+      }));
+
+      const artists = await Promise.all((artistsRes.topartists?.artist || []).map(async (a: any) => {
+        try {
+          let pic = await fetchArtistImageDeezer(a.name);
+          if (!pic) pic = await fetchArtistImageiTunes(a.name);
+          if (pic) {
+            return {
+              id: a.mbid || a.url || a.name,
+              name: a.name,
+              images: [{ url: pic, width: 600, height: 600 }],
+              playcount: parseInt(a.playcount, 10),
+            };
+          }
+        } catch { /* fallback */ }
+
+        // Fallback: Last.fm
+        const mapped = {
+          id: a.mbid || a.url || a.name,
+          name: a.name,
+          images: a.image?.map((img: any) => ({ url: img["#text"], width: 300, height: 300 })) || [],
+          playcount: parseInt(a.playcount, 10),
+        };
+        return mapped;
+      }));
       
       const recentTracks = recentRes.recenttracks?.track || [];
       let current: CurrentlyPlaying | null = null;
       if (recentTracks.length > 0 && recentTracks[0]["@attr"]?.nowplaying === "true") {
-        current = { is_playing: true, item: mapTrack(recentTracks[0]) };
+        const first = recentTracks[0];
+        const mappedFirst = mapTrack(first);
+        const artName = first.artist?.name || first.artist?.["#text"];
+        if (artName && first.name) {
+          try {
+            let art = await fetchCoverArtDeezer(artName, first.name);
+            if (!art) art = await fetchCoverArtiTunes(artName, first.name);
+            if (art) mappedFirst.album.images = [{ url: art, width: 600, height: 600 }];
+          } catch { /* fallback */ }
+        }
+        current = { is_playing: true, item: mappedFirst };
       }
 
       setTopTracks(tracks);
@@ -120,6 +188,8 @@ export default function FriendProfileScreen() {
   };
 
   useEffect(() => { loadProfile(); }, [loadProfile]);
+
+
 
   const handleSendRequest = async () => {
     setActionLoading(true);
@@ -284,7 +354,19 @@ export default function FriendProfileScreen() {
               )}
 
               <View style={styles.section}>
-                <SectionHeader title="Top Tracks" subtitle="Last 4 weeks" />
+                <SectionHeader title="Recently Played" />
+                {recentlyPlayed.length > 0 ? (
+                  recentlyPlayed.slice(0, 6).map((item, i) => (
+                    <TrackRow key={`${item.track.id}-${i}`} track={item.track} />
+                  ))
+                ) : (
+                  <Text style={[styles.empty, { color: colors.mutedForeground }]}>No recent activity</Text>
+                )}
+              </View>
+
+              <View style={styles.section}>
+                <SectionHeader title="Top Tracks" subtitle="Last 7 days" />
+
                 {topTracks.length === 0 ? (
                   <Text style={[styles.empty, { color: colors.mutedForeground }]}>No data yet</Text>
                 ) : (
@@ -295,7 +377,7 @@ export default function FriendProfileScreen() {
               </View>
 
               <View style={styles.section}>
-                <SectionHeader title="Top Artists" subtitle="Last 4 weeks" />
+                <SectionHeader title="Top Artists" subtitle="Last 7 days" />
                 {topArtists.length === 0 ? (
                   <Text style={[styles.empty, { color: colors.mutedForeground }]}>No data yet</Text>
                 ) : (
@@ -304,6 +386,8 @@ export default function FriendProfileScreen() {
                   ))
                 )}
               </View>
+
+
             </>
           )}
         </>

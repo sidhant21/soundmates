@@ -49,6 +49,8 @@ interface LastfmContextType {
   clearData: () => void;
 }
 
+
+
 const LastfmContext = createContext<LastfmContextType | null>(null);
 
 function mapTrack(t: any): LastfmTrack {
@@ -88,14 +90,20 @@ export function LastfmProvider({ children }: { children: React.ReactNode }) {
   const [recentlyPlayed, setRecentlyPlayed] = useState<RecentlyPlayed[]>([]);
   
   const [loadingTracks, setLoadingTracks] = useState(false);
+
   const [loadingArtists, setLoadingArtists] = useState(false);
   const [loadingCurrent, setLoadingCurrent] = useState(false);
   const [loadingRecent, setLoadingRecent] = useState(false);
 
+
   const fetchTopTracks = useCallback(async (username: string) => {
     setLoadingTracks(true);
     try {
-      const data = await fetchLastfmAPI("user.getTopTracks", { user: username, limit: "10", period: "1month" });
+      const data = await fetchLastfmAPI("user.getTopTracks", { user: username, limit: "10", period: "7day" });
+
+
+
+
       const rawTracks = data.toptracks?.track || [];
       
       const tracks = await Promise.all(rawTracks.map(async (t: any) => {
@@ -131,7 +139,11 @@ export function LastfmProvider({ children }: { children: React.ReactNode }) {
   const fetchTopArtists = useCallback(async (username: string) => {
     setLoadingArtists(true);
     try {
-      const data = await fetchLastfmAPI("user.getTopArtists", { user: username, limit: "10", period: "1month" });
+      const data = await fetchLastfmAPI("user.getTopArtists", { user: username, limit: "10", period: "7day" });
+
+
+
+
       const rawArtists = data.topartists?.artist || [];
 
       const artists = await Promise.all(rawArtists.map(async (a: any) => {
@@ -258,6 +270,22 @@ export function LastfmProvider({ children }: { children: React.ReactNode }) {
     ]);
   }, [profile?.lastfmUsername, fetchTopTracks, fetchTopArtists, fetchRecentAndCurrent]);
 
+
+
+
+  const updateTrackPeriod = useCallback((newPeriod: LastfmPeriod) => {
+    setTrackPeriod(newPeriod);
+    setTopTracks([]); // Clear immediately for visual feedback
+  }, []);
+
+  const updateArtistPeriod = useCallback((newPeriod: LastfmPeriod) => {
+    setArtistPeriod(newPeriod);
+    setTopArtists([]); // Clear immediately for visual feedback
+  }, []);
+
+
+
+
   const clearData = useCallback(() => {
     setTopTracks([]);
     setTopArtists([]);
@@ -279,6 +307,9 @@ export function LastfmProvider({ children }: { children: React.ReactNode }) {
         fetchAllData,
         clearData,
       }}
+
+
+
     >
       {children}
     </LastfmContext.Provider>
