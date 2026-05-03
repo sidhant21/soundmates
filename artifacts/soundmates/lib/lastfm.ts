@@ -43,17 +43,24 @@ export async function fetchLastfmAPI(method: string, params: Record<string, stri
 export async function fetchCoverArtiTunes(artist: string, track: string): Promise<string | null> {
   try {
     const searchTerm = encodeURIComponent(`${artist} ${track}`);
-    const res = await fetch(getUrl(`https://itunes.apple.com/search?term=${searchTerm}&entity=song&limit=1`));
+    const res = await fetch(getUrl(`https://itunes.apple.com/search?term=${searchTerm}&entity=song&limit=5`));
     if (!res.ok) return null;
     const data = await res.json();
     if (data.results && data.results.length > 0) {
-      return data.results[0].artworkUrl100.replace("100x100bb", "600x600bb");
+      // Find the best match where the artist name is similar
+      const bestMatch = data.results.find((r: any) => 
+        r.artistName.toLowerCase().includes(artist.toLowerCase()) || 
+        artist.toLowerCase().includes(r.artistName.toLowerCase())
+      ) || data.results[0];
+      
+      return bestMatch.artworkUrl100.replace("100x100bb", "600x600bb");
     }
     return null;
   } catch {
     return null;
   }
 }
+
 
 /**
  * Fetch high-quality track cover from Deezer API.
@@ -65,8 +72,16 @@ export async function fetchCoverArtDeezer(artist: string, track: string): Promis
     if (!res.ok) return null;
     const data = await res.json();
     if (data.data && data.data.length > 0) {
+      // Filter results to find a match where the artist name is correct
+      const filtered = data.data.filter((r: any) => 
+        r.artist?.name.toLowerCase().includes(artist.toLowerCase()) || 
+        artist.toLowerCase().includes(r.artist?.name.toLowerCase())
+      );
+      
+      const results = filtered.length > 0 ? filtered : data.data;
+
       // Pick the first result that has a non-placeholder cover
-      for (const result of data.data) {
+      for (const result of results) {
         const cover = result.album?.cover_xl || result.album?.cover_big || result.album?.cover_medium;
         if (cover && !cover.includes("d41d8cd98f00b204e9800998ecf8427e")) {
           return cover;
@@ -78,6 +93,7 @@ export async function fetchCoverArtDeezer(artist: string, track: string): Promis
     return null;
   }
 }
+
 
 
 /**
