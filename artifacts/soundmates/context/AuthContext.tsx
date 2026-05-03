@@ -38,6 +38,7 @@ interface AuthContextType {
   logOut: () => Promise<void>;
   createUsername: (username: string) => Promise<void>;
   updateSpotifyTokens: (accessToken: string, refreshToken: string, expiresIn: number) => Promise<void>;
+  disconnectSpotify: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
 
@@ -122,6 +123,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfile((prev) => (prev ? { ...prev, ...updates } : prev));
   };
 
+  const disconnectSpotify = async () => {
+    if (!user) throw new Error("Not authenticated");
+    const updates = {
+      spotifyConnected: false,
+      spotifyAccessToken: "",
+      spotifyRefreshToken: "",
+      spotifyTokenExpiry: 0,
+    };
+    await setDoc(doc(db, "users", user.uid), updates, { merge: true });
+    setProfile((prev) => (prev ? { ...prev, ...updates } : prev));
+  };
+
   const refreshProfile = async () => {
     if (user) await fetchProfile(user.uid);
   };
@@ -137,6 +150,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logOut,
         createUsername,
         updateSpotifyTokens,
+        disconnectSpotify,
         refreshProfile,
       }}
     >

@@ -1,0 +1,30 @@
+{
+  "cli": {
+    "version": ">= 18.9.1",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "EAS_PACKAGE_MANAGER": "pnpm"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "env": {
+        "EAS_PACKAGE_MANAGER": "pnpm"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "env": {
+        "EAS_PACKAGE_MANAGER": "pnpm"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

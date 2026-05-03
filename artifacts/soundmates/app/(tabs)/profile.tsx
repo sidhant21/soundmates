@@ -22,7 +22,7 @@ import { SectionHeader } from "@/components/SectionHeader";
 export default function ProfileScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { profile, logOut } = useAuth();
+  const { profile, logOut, disconnectSpotify } = useAuth();
   const {
     topTracks,
     topArtists,
@@ -31,6 +31,7 @@ export default function ProfileScreen() {
     loadingTracks,
     loadingArtists,
     fetchAllSpotifyData,
+    clearData,
   } = useSpotify();
   const [refreshing, setRefreshing] = React.useState(false);
 
@@ -68,11 +69,23 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Spotify badge */}
+      {/* Spotify badge & disconnect */}
       {profile?.spotifyConnected && (
-        <View style={[styles.spotifyBadge, { backgroundColor: "#1DB95420", borderColor: "#1DB954" }]}>
-          <Feather name="music" size={14} color="#1DB954" />
-          <Text style={styles.spotifyBadgeText}>Spotify Connected</Text>
+        <View style={styles.spotifyContainer}>
+          <View style={[styles.spotifyBadge, { backgroundColor: "#1DB95420", borderColor: "#1DB954" }]}>
+            <Feather name="music" size={14} color="#1DB954" />
+            <Text style={styles.spotifyBadgeText}>Spotify Connected</Text>
+          </View>
+          <TouchableOpacity 
+            style={[styles.disconnectBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={async () => {
+              await disconnectSpotify();
+              clearData();
+            }}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.disconnectText, { color: colors.foreground }]}>Disconnect Spotify</Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -131,6 +144,7 @@ const styles = StyleSheet.create({
   username: { fontSize: 24, fontFamily: "Inter_700Bold", letterSpacing: -0.3 },
   email: { fontSize: 13, fontFamily: "Inter_400Regular", marginTop: 2 },
   logoutBtn: { padding: 10, borderRadius: 10, borderWidth: 1 },
+  spotifyContainer: { marginBottom: 20, gap: 12 },
   spotifyBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -140,9 +154,10 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 20,
     borderWidth: 1,
-    marginBottom: 20,
   },
   spotifyBadgeText: { color: "#1DB954", fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  disconnectBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, borderWidth: 1, alignSelf: "flex-start" },
+  disconnectText: { fontSize: 13, fontFamily: "Inter_500Medium" },
   section: { marginBottom: 28 },
   loader: { marginVertical: 16 },
   empty: { fontSize: 14, fontFamily: "Inter_400Regular", marginTop: 8 },

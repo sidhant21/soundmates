@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { refreshSpotifyToken } from "@/lib/spotify";
 
 export interface SpotifyTrack {
   id: string;
@@ -46,21 +47,13 @@ interface SpotifyContextType {
   fetchCurrentlyPlaying: (token?: string) => Promise<void>;
   fetchRecentlyPlayed: (token?: string) => Promise<void>;
   fetchAllSpotifyData: (token?: string) => Promise<void>;
+  clearData: () => void;
 }
 
 const SpotifyContext = createContext<SpotifyContextType | null>(null);
 
-async function spotifyFetch(endpoint: string, token: string) {
-  const res = await fetch(`https://api.spotify.com/v1${endpoint}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (res.status === 204) return null;
-  if (!res.ok) throw new Error(`Spotify API error: ${res.status}`);
-  return res.json();
-}
-
 export function SpotifyProvider({ children }: { children: React.ReactNode }) {
-  const { profile } = useAuth();
+  const { profile, updateSpotifyTokens } = useAuth();
   const [topTracks, setTopTracks] = useState<SpotifyTrack[]>([]);
   const [topArtists, setTopArtists] = useState<SpotifyArtist[]>([]);
   const [currentlyPlaying, setCurrentlyPlaying] = useState<CurrentlyPlaying | null>(null);
@@ -70,72 +63,157 @@ export function SpotifyProvider({ children }: { children: React.ReactNode }) {
   const [loadingCurrent, setLoadingCurrent] = useState(false);
   const [loadingRecent, setLoadingRecent] = useState(false);
 
-  const getToken = (token?: string) => token ?? profile?.spotifyAccessToken ?? "";
+  // In-flight refresh promise — ensures only one refresh at a time
+  const refreshPromiseRef = useRef<Promise<string> | null>(null);
 
-  const fetchTopTracks = useCallback(async (token?: string) => {
-    const t = getToken(token);
-    if (!t) return;
-    setLoadingTracks(true);
-    try {
-      const data = await spotifyFetch("/me/top/tracks?limit=5&time_range=short_term", t);
-      setTopTracks(data?.items ?? []);
-    } catch {
-      setTopTracks([]);
-    } finally {
-      setLoadingTracks(false);
-    }
-  }, [profile?.spotifyAccessToken]);
+  /**
+   * Returns a valid access token, refreshing it first if it's within
+   * 5 minutes of expiry or already expired.
+   */
+  const getValidToken = useCallback(
+    async (overrideToken?: string): Promise<string> => {
+      // If a fresh token was explicitly passed (e.g. right after OAuth), use it
+      if (overrideToken) return overrideToken;
 
-  const fetchTopArtists = useCallback(async (token?: string) => {
-    const t = getToken(token);
-    if (!t) return;
-    setLoadingArtists(true);
-    try {
-      const data = await spotifyFetch("/me/top/artists?limit=5&time_range=short_term", t);
-      setTopArtists(data?.items ?? []);
-    } catch {
-      setTopArtists([]);
-    } finally {
-      setLoadingArtists(false);
-    }
-  }, [profile?.spotifyAccessToken]);
+      const { spotifyAccessToken, spotifyRefreshToken, spotifyTokenExpiry } = profile ?? {};
+      if (!spotifyAccessToken) return "";
 
-  const fetchCurrentlyPlaying = useCallback(async (token?: string) => {
-    const t = getToken(token);
-    if (!t) return;
-    setLoadingCurrent(true);
-    try {
-      const data = await spotifyFetch("/me/player/currently-playing", t);
-      setCurrentlyPlaying(data);
-    } catch {
-      setCurrentlyPlaying(null);
-    } finally {
-      setLoadingCurrent(false);
-    }
-  }, [profile?.spotifyAccessToken]);
+      const fiveMinutes = 5 * 60 * 1000;
+      const isExpired = !spotifyTokenExpiry || Date.now() > spotifyTokenExpiry - fiveMinutes;
 
-  const fetchRecentlyPlayed = useCallback(async (token?: string) => {
-    const t = getToken(token);
-    if (!t) return;
-    setLoadingRecent(true);
-    try {
-      const data = await spotifyFetch("/me/player/recently-played?limit=10", t);
-      setRecentlyPlayed(data?.items ?? []);
-    } catch {
-      setRecentlyPlayed([]);
-    } finally {
-      setLoadingRecent(false);
-    }
-  }, [profile?.spotifyAccessToken]);
+      if (!isExpired) return spotifyAccessToken;
 
-  const fetchAllSpotifyData = useCallback(async (token?: string) => {
-    await Promise.all([
-      fetchTopTracks(token),
-      fetchTopArtists(token),
-      fetchCurrentlyPlaying(token),
-      fetchRecentlyPlayed(token),
-    ]);
-  }, [fetchTopTracks, fetchTopArtists, fetchCurrentlyPlaying, fetchRecentlyPlayed]);
+      // Token is stale — refresh it (deduplicated)
+      if (!spotifyRefreshToken) return spotifyAccessToken; // can't refresh, try anyway
+
+      if (!refreshPromiseRef.current) {
+        refreshPromiseRef.current = (async () => {
+          try {
+            const data = await refreshSpotifyToken(spotifyRefreshToken);
+            const newAccess = data.access_token;
+            const newRefresh = data.refresh_token ?? spotifyRefreshToken;
+            await updateSpotifyTokens(newAccess, newRefresh, data.expires_in);
+            return newAccess;
+          } finally {
+            refreshPromiseRef.current = null;
+          }
+        })();
+      }
+
+      return refreshPromiseRef.current;
+    },
+    [profile, updateSpotifyTokens]
+  );
+
+  /** Wraps a Spotify API call with auth + 401 retry after refresh */
+  const spotifyFetch = useCallback(
+    async (endpoint: string, tokenOverride?: string) => {
+      let token = await getValidToken(tokenOverride);
+      if (!token) return null;
+
+      let res = await fetch(`https://api.spotify.com/v1${endpoint}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      // If 401, force a token refresh and retry once
+      if (res.status === 401 && profile?.spotifyRefreshToken) {
+        try {
+          const data = await refreshSpotifyToken(profile.spotifyRefreshToken);
+          token = data.access_token;
+          await updateSpotifyTokens(token, data.refresh_token ?? profile.spotifyRefreshToken, data.expires_in);
+          res = await fetch(`https://api.spotify.com/v1${endpoint}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+        } catch {
+          return null;
+        }
+      }
+
+      if (res.status === 204) return null;
+      if (!res.ok) throw new Error(`Spotify API error: ${res.status}`);
+      return res.json();
+    },
+    [getValidToken, profile, updateSpotifyTokens]
+  );
+
+  const fetchTopTracks = useCallback(
+    async (token?: string) => {
+      setLoadingTracks(true);
+      try {
+        const data = await spotifyFetch("/me/top/tracks?limit=10&time_range=short_term", token);
+        setTopTracks(data?.items ?? []);
+      } catch {
+        setTopTracks([]);
+      } finally {
+        setLoadingTracks(false);
+      }
+    },
+    [spotifyFetch]
+  );
+
+  const fetchTopArtists = useCallback(
+    async (token?: string) => {
+      setLoadingArtists(true);
+      try {
+        const data = await spotifyFetch("/me/top/artists?limit=10&time_range=short_term", token);
+        setTopArtists(data?.items ?? []);
+      } catch {
+        setTopArtists([]);
+      } finally {
+        setLoadingArtists(false);
+      }
+    },
+    [spotifyFetch]
+  );
+
+  const fetchCurrentlyPlaying = useCallback(
+    async (token?: string) => {
+      setLoadingCurrent(true);
+      try {
+        const data = await spotifyFetch("/me/player/currently-playing", token);
+        setCurrentlyPlaying(data);
+      } catch {
+        setCurrentlyPlaying(null);
+      } finally {
+        setLoadingCurrent(false);
+      }
+    },
+    [spotifyFetch]
+  );
+
+  const fetchRecentlyPlayed = useCallback(
+    async (token?: string) => {
+      setLoadingRecent(true);
+      try {
+        const data = await spotifyFetch("/me/player/recently-played?limit=10", token);
+        setRecentlyPlayed(data?.items ?? []);
+      } catch {
+        setRecentlyPlayed([]);
+      } finally {
+        setLoadingRecent(false);
+      }
+    },
+    [spotifyFetch]
+  );
+
+  const fetchAllSpotifyData = useCallback(
+    async (token?: string) => {
+      await Promise.all([
+        fetchTopTracks(token),
+        fetchTopArtists(token),
+        fetchCurrentlyPlaying(token),
+        fetchRecentlyPlayed(token),
+      ]);
+    },
+    [fetchTopTracks, fetchTopArtists, fetchCurrentlyPlaying, fetchRecentlyPlayed]
+  );
+
+  const clearData = useCallback(() => {
+    setTopTracks([]);
+    setTopArtists([]);
+    setCurrentlyPlaying(null);
+    setRecentlyPlayed([]);
+  }, []);
 
   return (
     <SpotifyContext.Provider
@@ -153,6 +231,7 @@ export function SpotifyProvider({ children }: { children: React.ReactNode }) {
         fetchCurrentlyPlaying,
         fetchRecentlyPlayed,
         fetchAllSpotifyData,
+        clearData,
       }}
     >
       {children}

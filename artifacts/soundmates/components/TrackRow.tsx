@@ -7,9 +7,10 @@ interface Props {
   track: SpotifyTrack;
   index?: number;
   showIndex?: boolean;
+  countLabel?: string;
 }
 
-export function TrackRow({ track, index, showIndex }: Props) {
+export function TrackRow({ track, index, showIndex, countLabel }: Props) {
   const colors = useColors();
   const imageUrl = track.album?.images?.[0]?.url;
   const artistNames = track.artists?.map((a) => a.name).join(", ") ?? "";
@@ -34,6 +35,9 @@ export function TrackRow({ track, index, showIndex }: Props) {
           {artistNames}
         </Text>
       </View>
+      {countLabel && (
+        <Text style={[styles.countLabel, { color: colors.primary }]}>{countLabel}</Text>
+      )}
     </View>
   );
 }
@@ -73,5 +77,14 @@ const styles = StyleSheet.create({
   artists: {
     fontSize: 12,
     fontFamily: "Inter_400Regular",
+  },
+  countLabel: {
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    overflow: "hidden",
+    backgroundColor: "rgba(29, 185, 84, 0.15)", // Subtle Spotify green background
   },
 });
