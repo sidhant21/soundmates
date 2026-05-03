@@ -78,7 +78,9 @@ export default function FriendProfileScreen() {
   const [pendingReq, setPendingReq] = useState<FriendRequest | null>(null);
   const [topTracks, setTopTracks] = useState<LastfmTrack[]>([]);
   const [topArtists, setTopArtists] = useState<LastfmArtist[]>([]);
+  const [recentlyPlayed, setRecentlyPlayed] = useState<RecentlyPlayed[]>([]);
   const [currentlyPlaying, setCurrentlyPlaying] = useState<CurrentlyPlaying | null>(null);
+
 
 
   const [loadingProfile, setLoadingProfile] = useState(true);
@@ -163,6 +165,16 @@ export default function FriendProfileScreen() {
       
       const recentTracks = recentRes.recenttracks?.track || [];
       let current: CurrentlyPlaying | null = null;
+      
+      // Filter and map recent tracks
+      const mappedRecent = await Promise.all(recentTracks.map(async (rt: any) => {
+        const mapped = mapTrack(rt);
+        return {
+          track: mapped,
+          played_at: rt.date?.uts || Date.now().toString(),
+        };
+      }));
+
       if (recentTracks.length > 0 && recentTracks[0]["@attr"]?.nowplaying === "true") {
         const first = recentTracks[0];
         const mappedFirst = mapTrack(first);
@@ -179,7 +191,9 @@ export default function FriendProfileScreen() {
 
       setTopTracks(tracks);
       setTopArtists(artists);
+      setRecentlyPlayed(mappedRecent.filter(r => r.track.name !== current?.item?.name).slice(0, 8));
       setCurrentlyPlaying(current);
+
     } catch {
       // ignore
     } finally {
