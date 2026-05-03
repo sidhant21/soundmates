@@ -273,19 +273,6 @@ export function LastfmProvider({ children }: { children: React.ReactNode }) {
 
 
 
-  const updateTrackPeriod = useCallback((newPeriod: LastfmPeriod) => {
-    setTrackPeriod(newPeriod);
-    setTopTracks([]); // Clear immediately for visual feedback
-  }, []);
-
-  const updateArtistPeriod = useCallback((newPeriod: LastfmPeriod) => {
-    setArtistPeriod(newPeriod);
-    setTopArtists([]); // Clear immediately for visual feedback
-  }, []);
-
-
-
-
   const clearData = useCallback(() => {
     setTopTracks([]);
     setTopArtists([]);

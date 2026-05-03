@@ -1,5 +1,7 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
+// @ts-ignore
 import { initializeAuth, getReactNativePersistence, getAuth } from "firebase/auth";
+
 import { initializeFirestore } from "firebase/firestore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
@@ -24,8 +26,10 @@ if (Platform.OS === "web") {
   // Safe initialization for Native
   try {
     authInstance = initializeAuth(app, {
+      // @ts-ignore
       persistence: getReactNativePersistence(AsyncStorage),
     });
+
   } catch (error) {
     console.warn("Firebase Auth initialization warning:", error);
     authInstance = getAuth(app);
