@@ -2,7 +2,7 @@ import { initializeApp, getApps, getApp } from "firebase/app";
 import { 
   getAuth,
   initializeAuth,
-  browserLocalPersistence,
+  getReactNativePersistence,
 } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -25,13 +25,14 @@ let authInstance;
 if (Platform.OS === "web") {
   authInstance = getAuth(app);
 } else {
-  // Use a dynamic require for React Native persistence to avoid crashing Web
-  // This is the correct way for Firebase v11+ in Expo
-  const { getReactNativePersistence } = require("firebase/auth/react-native");
-  
-  authInstance = initializeAuth(app, {
-    persistence: getReactNativePersistence(AsyncStorage),
-  });
+  try {
+    authInstance = initializeAuth(app, {
+      persistence: getReactNativePersistence(AsyncStorage),
+    });
+  } catch (e) {
+    // Fallback to default auth if initialization fails
+    authInstance = getAuth(app);
+  }
 }
 
 export const auth = authInstance;
