@@ -1,10 +1,6 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { 
-  getAuth,
-  initializeAuth,
-  getReactNativePersistence,
-} from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { initializeAuth, getReactNativePersistence, getAuth } from "firebase/auth";
+import { initializeFirestore } from "firebase/firestore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
 
@@ -25,16 +21,22 @@ let authInstance;
 if (Platform.OS === "web") {
   authInstance = getAuth(app);
 } else {
+  // Safe initialization for Native
   try {
     authInstance = initializeAuth(app, {
       persistence: getReactNativePersistence(AsyncStorage),
     });
-  } catch (e) {
-    // Fallback to default auth if initialization fails
+  } catch (error) {
+    console.warn("Firebase Auth initialization warning:", error);
     authInstance = getAuth(app);
   }
 }
 
 export const auth = authInstance;
-export const db = getFirestore(app);
+
+// Stable Firestore initialization for React Native
+export const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+});
+
 export default app;

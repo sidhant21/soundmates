@@ -47,14 +47,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (uid: string) => {
-    const docRef = doc(db, "users", uid);
-    const snap = await getDoc(docRef);
-    if (snap.exists()) {
-      setProfile(snap.data() as UserProfile);
-    } else {
+    try {
+      const docRef = doc(db, "users", uid);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        setProfile(snap.data() as UserProfile);
+      } else {
+        setProfile(null);
+      }
+    } catch (error) {
+      console.error("[Auth] Error fetching profile:", error);
       setProfile(null);
     }
   };
+
+
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -69,6 +76,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return unsub;
   }, []);
 
+
+
   const signUp = async (email: string, password: string) => {
     await createUserWithEmailAndPassword(auth, email, password);
   };
@@ -76,6 +85,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email, password);
   };
+
+
 
   const logOut = async () => {
     await signOut(auth);
