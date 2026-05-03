@@ -134,11 +134,29 @@ export default function ProfileScreen() {
       {recentlyPlayed.length > 0 && (
         <View style={styles.section}>
           <SectionHeader title="Recently Played" />
-          {recentlyPlayed.slice(0, 6).map((item, i) => (
-            <TrackRow key={`${item.track.id}-${i}`} track={item.track} />
-          ))}
+          {(() => {
+            const seen = new Map<string, { track: typeof recentlyPlayed[0]["track"]; count: number }>();
+            for (const item of recentlyPlayed) {
+              const existing = seen.get(item.track.id);
+              if (existing) {
+                existing.count += 1;
+              } else {
+                seen.set(item.track.id, { track: item.track, count: 1 });
+              }
+            }
+            return Array.from(seen.values())
+              .slice(0, 10)
+              .map(({ track, count }) => (
+                <TrackRow
+                  key={track.id}
+                  track={track}
+                  countLabel={count > 1 ? `Played ${count}×` : undefined}
+                />
+              ));
+          })()}
         </View>
       )}
+
     </ScrollView>
   );
 }
