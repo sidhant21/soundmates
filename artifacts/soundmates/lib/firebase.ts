@@ -1,6 +1,12 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { 
+  getAuth,
+  initializeAuth,
+  browserLocalPersistence,
+} from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform } from "react-native";
 
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
@@ -13,6 +19,21 @@ const firebaseConfig = {
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-export const auth = getAuth(app);
+// Initialize Auth with cross-platform persistence
+let authInstance;
+
+if (Platform.OS === "web") {
+  authInstance = getAuth(app);
+} else {
+  // Use a dynamic require for React Native persistence to avoid crashing Web
+  // This is the correct way for Firebase v11+ in Expo
+  const { getReactNativePersistence } = require("firebase/auth/react-native");
+  
+  authInstance = initializeAuth(app, {
+    persistence: getReactNativePersistence(AsyncStorage),
+  });
+}
+
+export const auth = authInstance;
 export const db = getFirestore(app);
 export default app;
