@@ -120,10 +120,11 @@ export default function FriendProfileScreen() {
     try {
 
       const [tracksRes, artistsRes, recentRes] = await Promise.all([
-        fetchLastfmAPI("user.getTopTracks", { user: username, limit: "5", period: "7day" }),
-        fetchLastfmAPI("user.getTopArtists", { user: username, limit: "5", period: "7day" }),
-        fetchLastfmAPI("user.getRecentTracks", { user: username, limit: "5" }),
+        fetchLastfmAPI("user.getTopTracks", { user: username, limit: "10", period: "7day" }),
+        fetchLastfmAPI("user.getTopArtists", { user: username, limit: "10", period: "7day" }),
+        fetchLastfmAPI("user.getRecentTracks", { user: username, limit: "10" }),
       ]);
+
 
       
       const tracks = await Promise.all((tracksRes.toptracks?.track || []).map(async (t: any) => {
@@ -191,8 +192,9 @@ export default function FriendProfileScreen() {
 
       setTopTracks(tracks);
       setTopArtists(artists);
-      setRecentlyPlayed(mappedRecent.filter(r => r.track.name !== current?.item?.name).slice(0, 8));
+      setRecentlyPlayed(mappedRecent.filter(r => r.track.name !== current?.item?.name).slice(0, 10));
       setCurrentlyPlaying(current);
+
 
     } catch {
       // ignore
@@ -370,9 +372,10 @@ export default function FriendProfileScreen() {
               <View style={styles.section}>
                 <SectionHeader title="Recently Played" />
                 {recentlyPlayed.length > 0 ? (
-                  recentlyPlayed.slice(0, 6).map((item, i) => (
+                  recentlyPlayed.slice(0, 10).map((item, i) => (
                     <TrackRow key={`${item.track.id}-${i}`} track={item.track} />
                   ))
+
                 ) : (
                   <Text style={[styles.empty, { color: colors.mutedForeground }]}>No recent activity</Text>
                 )}
