@@ -17,6 +17,14 @@
         "EAS_PACKAGE_MANAGER": "pnpm"
       }
     },
+    "apk": {
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EAS_PACKAGE_MANAGER": "pnpm"
+      }
+    },
     "production": {
       "autoIncrement": true,
       "env": {

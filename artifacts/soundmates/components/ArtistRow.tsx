@@ -1,18 +1,18 @@
 import React from "react";
 import { View, Text, Image, StyleSheet } from "react-native";
 import { useColors } from "@/hooks/useColors";
-import type { SpotifyArtist } from "@/context/SpotifyContext";
+import type { LastfmArtist } from "@/context/LastfmContext";
 
 interface Props {
-  artist: SpotifyArtist;
+  artist: LastfmArtist;
   index?: number;
   showIndex?: boolean;
 }
 
 export function ArtistRow({ artist, index, showIndex }: Props) {
   const colors = useColors();
-  const imageUrl = artist.images?.[0]?.url;
-  const genre = artist.genres?.[0] ?? "";
+  const images = artist.images || [];
+  const imageUrl = images.length > 0 ? images[images.length - 1].url : null;
 
   return (
     <View style={[styles.row, { borderBottomColor: colors.border }]}>
@@ -30,11 +30,6 @@ export function ArtistRow({ artist, index, showIndex }: Props) {
         <Text style={[styles.name, { color: colors.foreground }]} numberOfLines={1}>
           {artist.name}
         </Text>
-        {genre ? (
-          <Text style={[styles.genre, { color: colors.mutedForeground }]} numberOfLines={1}>
-            {genre}
-          </Text>
-        ) : null}
       </View>
     </View>
   );

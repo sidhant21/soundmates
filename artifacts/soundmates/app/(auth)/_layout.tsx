@@ -6,7 +6,7 @@ export default function AuthLayout() {
       <Stack.Screen name="login" />
       <Stack.Screen name="signup" />
       <Stack.Screen name="create-username" />
-      <Stack.Screen name="connect-spotify" />
+      <Stack.Screen name="connect-lastfm" />
     </Stack>
   );
 }
